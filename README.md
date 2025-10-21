@@ -81,7 +81,7 @@ Donde `T` es el número de divisiones del temperamento.
 - **Aproxima**: sistema de Jing Fang/Mercator
 - **Precisión**: extraordinaria para intervalos justos
 
-## 🎨 Código de Colores
+## Código de Colores
 
 - **Gris claro** (#e0e0e0): Notas naturales (C, D, E, F, G, A, B)
 - **Azul** (#4a90e2): Grados cromáticos principales
