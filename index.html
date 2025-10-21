@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Generador de Círculos - Conjuntos de Clases de Alturas</title>
+<link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+<div class="main-container">
+<!-- Header -->
+<header class="app-header">
+<h1>Sistema de Círculos - Teoría de Conjuntos</h1>
+<p class="subtitle">Visualización y manipulación de conjuntos de clases de alturas</p>
+</header>
+
+<!-- Settings Panel -->
+<div class="settings">
+<div class="settings-row">
+<label for="temperamentSelect">Temperamento:</label>
+<select id="temperamentSelect">
+<option value="19">19-TET (19 divisiones por octava)</option>
+<option value="31">31-TET (31 divisiones por octava)</option>
+<option value="41">41-TET (41 divisiones por octava)</option>
+<option value="53">53-TET (53 divisiones por octava)</option>
+</select>
+</div>
+<div class="settings-row">
+<label for="transpositionInput">Transposición (T):</label>
+<input type="number" id="transpositionInput" value="0" min="0" max="18">
+<label for="inversionInput">Inversión (I):</label>
+<input type="number" id="inversionInput" value="0" min="0" max="18">
+</div>
+</div>
+
+<!-- Circles Grid -->
+<div class="circles-grid">
+<!-- Fn Circle (Input) -->
+<div class="circle-container">
+<div class="circle-title">Selector Fn</div>
+<div class="dial">
+<svg id="fnSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
+<div class="center-circle fn-circle">Fn</div>
+</div>
+<div class="info">
+<div>
+<span class="info-label">Set: </span>
+<span class="info-values" id="fnValues">-</span>
+</div>
+<div class="instruction">
+Selecciona slices y presiona Bang para enviar
+</div>
+<div class="controls">
+<button class="bang-button" id="bangBtn">Bang</button>
+<button id="clearBtn">Limpiar selección</button>
+</div>
+</div>
+</div>
+
+<!-- Tn Circle (Transposition) -->
+<div class="circle-container">
+<div class="circle-title">Transposición Tn</div>
+<div class="dial">
+<svg id="tnSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
+<div class="center-circle tn-circle">Tn</div>
+</div>
+<div class="info">
+<div>
+<span class="info-label">Result: </span>
+<span class="info-values" id="tnValues">-</span>
+</div>
+</div>
+</div>
+
+<!-- TnI Circle (Inversion) -->
+<div class="circle-container">
+<div class="circle-title">Inversión TnI</div>
+<div class="dial">
+<svg id="tniSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
+<div class="center-circle tni-circle">TnI</div>
+</div>
+<div class="info">
+<div>
+<span class="info-label">Result: </span>
+<span class="info-values" id="tniValues">-</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Scripts en orden correcto de dependencias -->
+<script src="./js/temperament-data.js"></script>
+<script src="./js/temperament-operations.js"></script>
+<script src="./js/circle_renderer.js"></script>
+</body>
+</html>
