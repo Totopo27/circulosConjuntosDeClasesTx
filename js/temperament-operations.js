@@ -99,7 +99,7 @@ function calculateNormalForm(set, temp) {
             // (comparar intervalos internos desde el inicio)
             var useCurrent = false;
             for (var k = 1; k < currentRotation.length - 1; k++) {
-                var currentInterval = mod(currentRotation[k] - currentRotation[0], temp);
+            var currentInterval = mod(currentRotation[k] - currentRotation[0], temp);
                 var bestInterval = mod(bestRotation[k] - bestRotation[0], temp);
                 if (currentInterval < bestInterval) {
                     useCurrent = true;
