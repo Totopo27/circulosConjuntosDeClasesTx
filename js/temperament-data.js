@@ -1,9 +1,9 @@
 /**
  * temperament-data.js
- * Definiciones de segmentos y configuraciones para cada temperamento
+ * Definitions, segments and configurations for Equal Temperaments (19-TET, 31-TET, 41-TET, 53-TET)
  */
 
-const TEMPERAMENT_CONFIGS = {
+const RAW_TEMPERAMENT_CONFIGS = {
     19: {
         name: '19-TET',
         description: 'Sistema de 19 divisiones por octava (~63.16 cents por grado)',
@@ -29,7 +29,7 @@ const TEMPERAMENT_CONFIGS = {
             { value: 18, color: '#4a90e2' }
         ]
     },
-    
+
     31: {
         name: '31-TET',
         description: 'Sistema de 31 divisiones por octava (~38.71 cents por grado)',
@@ -67,7 +67,7 @@ const TEMPERAMENT_CONFIGS = {
             { value: 30, color: '#4a90e2' }
         ]
     },
-    
+
     41: {
         name: '41-TET',
         description: 'Sistema de 41 divisiones por octava (~29.27 cents por grado)',
@@ -115,7 +115,7 @@ const TEMPERAMENT_CONFIGS = {
             { value: 40, color: '#4a90e2' }
         ]
     },
-    
+
     53: {
         name: '53-TET',
         description: 'Sistema de 53 divisiones por octava (~22.64 cents por grado)',
@@ -177,58 +177,102 @@ const TEMPERAMENT_CONFIGS = {
     }
 };
 
+// Deeply freeze configuration objects to protect against runtime mutations
+Object.keys(RAW_TEMPERAMENT_CONFIGS).forEach(key => {
+    const config = RAW_TEMPERAMENT_CONFIGS[key];
+    config.segments.forEach(segment => Object.freeze(segment));
+    Object.freeze(config.segments);
+    Object.freeze(config);
+});
+const TEMPERAMENT_CONFIGS = Object.freeze(RAW_TEMPERAMENT_CONFIGS);
+
 /**
- * Obtiene la configuración completa de un temperamento
- * @param {number} temperament - El número de divisiones (19, 31, 41, 53)
- * @returns {Object|null} Configuración del temperamento o null si no existe
+ * Validates if a temperament is officially supported
+ * @param {number|string} temperament - Divisions to check (e.g. 19, 31, 41, 53)
+ * @returns {boolean} true if supported
+ */
+function isTemperamentSupported(temperament) {
+    if (temperament === null || temperament === undefined) return false;
+    const key = String(temperament);
+    return Object.prototype.hasOwnProperty.call(TEMPERAMENT_CONFIGS, key);
+}
+
+/**
+ * Validates if a pitch class number is within the valid range [0, temperament - 1]
+ * @param {number} value - Pitch class candidate
+ * @param {number|string} temperament - Temperament divisions
+ * @returns {boolean} true if valid integer within range
+ */
+function isValidPitchClass(value, temperament) {
+    if (typeof value !== 'number' || !Number.isInteger(value)) return false;
+    if (!isTemperamentSupported(temperament)) return false;
+    const divisions = parseInt(temperament, 10);
+    return value >= 0 && value < divisions;
+}
+
+/**
+ * Validates and sanitizes a pitch class against a temperament range, throwing an error if invalid
+ * @param {number} value - Pitch class
+ * @param {number|string} temperament - Temperament
+ * @returns {number} The valid pitch class
+ */
+function validatePitchClass(value, temperament) {
+    if (!isValidPitchClass(value, temperament)) {
+        throw new RangeError(
+            `Pitch class ${value} is invalid for temperament ${temperament}-TET. Must be integer in range [0, ${parseInt(temperament, 10) - 1}].`
+        );
+    }
+    return value;
+}
+
+/**
+ * Gets the complete configuration for a temperament
+ * @param {number|string} temperament - The division count
+ * @returns {Object|null} Config object or null if not supported
  */
 function getTemperamentConfig(temperament) {
-    return TEMPERAMENT_CONFIGS[temperament] || null;
+    return isTemperamentSupported(temperament) ? TEMPERAMENT_CONFIGS[temperament] : null;
 }
 
 /**
- * Obtiene la configuración de segmentos para un temperamento dado
- * @param {number} temperament - El número de divisiones (19, 31, 41, 53)
- * @returns {Array} Array de segmentos
+ * Gets the segments array for a temperament
+ * @param {number|string} temperament - The division count
+ * @returns {Array<Object>} Array of segments (or empty array if invalid)
  */
 function getSegmentsForTemperament(temperament) {
-    const config = TEMPERAMENT_CONFIGS[temperament];
-    if (!config) {
-        console.error(`Temperamento ${temperament} no está definido`);
-        return [];
-    }
-    return config.segments || [];
+    const config = getTemperamentConfig(temperament);
+    return config ? config.segments : [];
 }
 
 /**
- * Obtiene el nombre descriptivo del temperamento
- * @param {number} temperament - El número de divisiones
- * @returns {string} Nombre del temperamento
+ * Gets the descriptive name of a temperament
+ * @param {number|string} temperament - The division count
+ * @returns {string} Name of temperament or 'Unknown'
  */
 function getTemperamentName(temperament) {
-    const config = TEMPERAMENT_CONFIGS[temperament];
+    const config = getTemperamentConfig(temperament);
     return config ? config.name : 'Unknown';
 }
 
 /**
- * Obtiene la descripción del temperamento
- * @param {number} temperament - El número de divisiones
- * @returns {string} Descripción del temperamento
+ * Gets the description of a temperament
+ * @param {number|string} temperament - The division count
+ * @returns {string} Description of temperament
  */
 function getTemperamentDescription(temperament) {
-    const config = TEMPERAMENT_CONFIGS[temperament];
+    const config = getTemperamentConfig(temperament);
     return config ? config.description : 'Temperamento desconocido';
 }
 
 /**
- * Obtiene lista de todos los temperamentos disponibles
- * @returns {Array} Array con información de temperamentos disponibles
+ * Gets the list of all available temperaments
+ * @returns {Array<{divisions: number, name: string, description: string, segmentCount: number}>}
  */
 function getAvailableTemperaments() {
     return Object.keys(TEMPERAMENT_CONFIGS).map(key => {
         const config = TEMPERAMENT_CONFIGS[key];
         return {
-            divisions: parseInt(key),
+            divisions: parseInt(key, 10),
             name: config.name,
             description: config.description,
             segmentCount: config.segments.length
@@ -236,17 +280,34 @@ function getAvailableTemperaments() {
     });
 }
 
-/**
- * Valida si un temperamento está soportado
- * @param {number} temperament - El número de divisiones a validar
- * @returns {boolean} true si el temperamento está soportado
- */
-function isTemperamentSupported(temperament) {
-    return TEMPERAMENT_CONFIGS.hasOwnProperty(temperament);
+// Module export structure
+const TemperamentData = {
+    TEMPERAMENT_CONFIGS,
+    getTemperamentConfig,
+    getSegmentsForTemperament,
+    getTemperamentName,
+    getTemperamentDescription,
+    getAvailableTemperaments,
+    isTemperamentSupported,
+    isValidPitchClass,
+    validatePitchClass
+};
+
+// Browser global bindings
+if (typeof window !== 'undefined') {
+    window.TEMPERAMENT_CONFIGS = TEMPERAMENT_CONFIGS;
+    window.TemperamentData = TemperamentData;
+    window.getTemperamentConfig = getTemperamentConfig;
+    window.getSegmentsForTemperament = getSegmentsForTemperament;
+    window.getTemperamentName = getTemperamentName;
+    window.getTemperamentDescription = getTemperamentDescription;
+    window.getAvailableTemperaments = getAvailableTemperaments;
+    window.isTemperamentSupported = isTemperamentSupported;
+    window.isValidPitchClass = isValidPitchClass;
+    window.validatePitchClass = validatePitchClass;
 }
 
-// Logging para debug - solo en desarrollo
-if (typeof console !== 'undefined') {
-    console.log('temperament-data.js cargado correctamente');
-    console.log('Temperamentos disponibles:', Object.keys(TEMPERAMENT_CONFIGS));
+// CommonJS export for Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TemperamentData;
 }

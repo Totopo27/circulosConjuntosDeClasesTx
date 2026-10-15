@@ -10,18 +10,21 @@
 
 <body>
     <div class="main-container">
+        <!-- Toast container for accessible notifications -->
+        <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
         <!-- Header -->
         <header class="app-header">
-            <button id="themeToggle" class="theme-toggle" aria-label="Cambiar modo">Modo: Oscuro</button>
+            <button id="themeToggle" class="theme-toggle" aria-label="Cambiar a modo claro">Modo: Oscuro</button>
             <h1>Sistema de Círculos - Teoría de Conjuntos</h1>
-            <p class="subtitle">Visualización y manipulación de conjuntos de clases de alturas</p>
+            <p class="subtitle">Visualización y manipulación de conjuntos de clases de alturas (19, 31, 41 y 53-TET)</p>
         </header>
 
         <!-- Settings Panel -->
-        <div class="settings">
+        <section class="settings" aria-label="Configuración de temperamento y operaciones">
             <div class="settings-row">
                 <label for="temperamentSelect">Temperamento:</label>
-                <select id="temperamentSelect">
+                <select id="temperamentSelect" aria-label="Seleccionar temperamento igual">
                     <option value="19">19-TET (19 divisiones por octava)</option>
                     <option value="31">31-TET (31 divisiones por octava)</option>
                     <option value="41">41-TET (41 divisiones por octava)</option>
@@ -30,72 +33,92 @@
             </div>
             <div class="settings-row">
                 <label for="transpositionInput">Transposición (T):</label>
-                <input type="number" id="transpositionInput" value="0" min="0" max="18">
+                <input type="number" id="transpositionInput" value="0" min="0" max="18" step="1" autocomplete="off" aria-label="Intervalo de transposición Tn">
                 <label for="inversionInput">Inversión (I):</label>
-                <input type="number" id="inversionInput" value="0" min="0" max="18">
+                <input type="number" id="inversionInput" value="0" min="0" max="18" step="1" autocomplete="off" aria-label="Índice de inversión TnI">
             </div>
-        </div>
+        </section>
 
         <!-- Circles Grid -->
-        <div class="circles-grid">
+        <main class="circles-grid" aria-label="Visualizadores de conjuntos de clases">
             <!-- Fn Circle (Input) -->
-            <div class="circle-container">
-                <div class="circle-title">Selector Fn</div>
+            <section class="circle-container" aria-labelledby="fnTitle">
+                <h2 id="fnTitle" class="circle-title">Selector Fn</h2>
                 <div class="dial">
-                    <svg id="fnSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
-                    <div class="center-circle fn-circle">Fn</div>
+                    <svg id="fnSvg" width="400" height="400" viewBox="0 0 400 400" role="group" aria-label="Círculo selector de clases de alturas Fn"></svg>
+                    <div class="center-circle fn-circle" aria-hidden="true">Fn</div>
                 </div>
                 <div class="info">
                     <div>
                         <span class="info-label">Set: </span>
-                        <span class="info-values" id="fnValues">-</span>
+                        <span class="info-values" id="fnValues" aria-live="polite">-</span>
                     </div>
                     <div class="instruction">
                         Selecciona slices y presiona Bang para enviar
                     </div>
-                    <div class="controls">
-                        <button class="bang-button" id="bangBtn">Bang</button>
-                        <button id="clearBtn">Limpiar selección</button>
+                    <p class="keyboard-hints">
+                        Atajos: <kbd>Enter</kbd> (Bang) &bull; <kbd>Esc</kbd> (Limpiar) &bull; <kbd>Tab</kbd> / <kbd>Espacio</kbd> (Navegar/Seleccionar)
+                    </p>
+                    <div class="controls" role="toolbar" aria-label="Acciones del selector">
+                        <button class="bang-button" id="bangBtn" title="Calcular transposición e inversión (Enter)">Bang</button>
+                        <button id="clearBtn" title="Limpiar selección actual (Esc)">Limpiar selección</button>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- Tn Circle (Transposition) -->
-            <div class="circle-container">
-                <div class="circle-title">Transposición Tn</div>
+            <section class="circle-container" aria-labelledby="tnTitle">
+                <h2 id="tnTitle" class="circle-title">Transposición Tn</h2>
                 <div class="dial">
-                    <svg id="tnSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
-                    <div class="center-circle tn-circle">Tn</div>
+                    <svg id="tnSvg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Círculo de transposición Tn"></svg>
+                    <div class="center-circle tn-circle" aria-hidden="true">Tn</div>
                 </div>
                 <div class="info">
                     <div>
                         <span class="info-label">Result: </span>
-                        <span class="info-values" id="tnValues">-</span>
+                        <span class="info-values" id="tnValues" aria-live="polite">-</span>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- TnI Circle (Inversion) -->
-            <div class="circle-container">
-                <div class="circle-title">Inversión TnI</div>
+            <section class="circle-container" aria-labelledby="tniTitle">
+                <h2 id="tniTitle" class="circle-title">Inversión TnI</h2>
                 <div class="dial">
-                    <svg id="tniSvg" width="400" height="400" viewBox="0 0 400 400"></svg>
-                    <div class="center-circle tni-circle">TnI</div>
+                    <svg id="tniSvg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Círculo de inversión TnI"></svg>
+                    <div class="center-circle tni-circle" aria-hidden="true">TnI</div>
                 </div>
                 <div class="info">
                     <div>
                         <span class="info-label">Result: </span>
-                        <span class="info-values" id="tniValues">-</span>
+                        <span class="info-values" id="tniValues" aria-live="polite">-</span>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
 
-        <!-- Scripts en orden correcto de dependencias -->
-        <script src="./js/temperament-data.js"></script>
-        <script src="./js/temperament-operations.js"></script>
-        <script src="./js/circle_renderer.js"></script>
-        <script src="./js/theme-toggle.js"></script>
+        <!-- Interval Vector Analysis Panel -->
+        <section class="analysis-panel" id="analysisPanel" aria-labelledby="vectorTitle">
+            <div class="analysis-header">
+                <div class="analysis-title-group">
+                    <h2 id="vectorTitle" class="analysis-title">📊 Vector Interválico (Contenido Armónico)</h2>
+                    <span class="analysis-subtitle" id="vectorNotation">Notación formal: ⟨ - ⟩</span>
+                </div>
+                <div class="analysis-stats">
+                    <span class="stat-badge" id="totalIntervalsBadge">Total intervalos: 0</span>
+                </div>
+            </div>
+            <div class="vector-grid-container">
+                <div class="vector-grid" id="vectorGrid" role="region" aria-label="Distribución de clases de intervalo"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts en orden correcto de dependencias -->
+    <script src="./js/temperament-data.js"></script>
+    <script src="./js/temperament-operations.js"></script>
+    <script src="./js/circle_renderer.js"></script>
+    <script src="./js/theme-toggle.js"></script>
 </body>
 
 </html>

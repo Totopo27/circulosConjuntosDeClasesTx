@@ -1,32 +1,103 @@
 /**
- * circle-renderer.js
- * Maneja el renderizado SVG y la interacción del usuario
+ * circle_renderer.js
+ * SVG rendering, mathematical visualization, and accessible interaction for Pitch Class Circles
  */
 
-// Constantes de geometría
+// Dial Geometry Constants
 const centerX = 200;
 const centerY = 200;
 const outerRadius = 180;
 const innerRadius = 110;
 
-// Estado de la aplicación
+// Application State
 let currentSegments = [];
-let selectedSegments = new Set();
-let fnElements = [];
-let tnElements = [];
-let tniElements = [];
+const selectedSegments = new Set();
+const fnElements = [];
+const tnElements = [];
+const tniElements = [];
 
 /**
- * Crea el path SVG para un segmento del círculo
- * @param {number} index - Índice del segmento
- * @param {number} totalSegments - Total de segmentos en el círculo
- * @returns {string} Path SVG
+ * Displays an accessible, non-blocking in-app notification toast
+ * @param {string} message - Notification text
+ * @param {'info'|'warning'|'success'} [type='info'] - Notification semantic type
+ * @param {number} [duration=3000] - Lifespan in milliseconds
+ */
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        console.warn(`[Toast ${type}]: ${message}`);
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', 'status');
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 350);
+    }, duration);
+}
+
+/**
+ * Returns dynamic typography and positioning config scaled to segment density
+ * @param {number} totalSegments - Total degrees in octave (19, 31, 41, 53)
+ * @returns {{numberSize: string, labelSize: string, numberOffsetWithLabel: number, labelOffset: number}}
+ */
+function getFontConfigForTemperament(totalSegments) {
+    if (totalSegments <= 19) {
+        return {
+            numberSize: '13',
+            labelSize: '14',
+            numberOffsetWithLabel: 7,
+            labelOffset: 12
+        };
+    } else if (totalSegments <= 31) {
+        return {
+            numberSize: '11',
+            labelSize: '12',
+            numberOffsetWithLabel: 6,
+            labelOffset: 10
+        };
+    } else if (totalSegments <= 41) {
+        return {
+            numberSize: '9.5',
+            labelSize: '10',
+            numberOffsetWithLabel: 5.5,
+            labelOffset: 9
+        };
+    } else {
+        // 53-TET
+        return {
+            numberSize: '8.5',
+            labelSize: '9',
+            numberOffsetWithLabel: 5,
+            labelOffset: 8
+        };
+    }
+}
+
+/**
+ * Generates an SVG path for an annular ring segment
+ * @param {number} index - Segment index
+ * @param {number} totalSegments - Total slices in circle
+ * @returns {string} SVG Path definition
  */
 function createSegmentPath(index, totalSegments) {
     const anglePerSegment = (2 * Math.PI) / totalSegments;
     const startAngle = index * anglePerSegment;
     const endAngle = (index + 1) * anglePerSegment;
-    
+
     const x1 = centerX + outerRadius * Math.cos(startAngle);
     const y1 = centerY + outerRadius * Math.sin(startAngle);
     const x2 = centerX + outerRadius * Math.cos(endAngle);
@@ -35,17 +106,17 @@ function createSegmentPath(index, totalSegments) {
     const y3 = centerY + innerRadius * Math.sin(endAngle);
     const x4 = centerX + innerRadius * Math.cos(startAngle);
     const y4 = centerY + innerRadius * Math.sin(startAngle);
-    
+
     return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 0 0 ${x4} ${y4} Z`;
 }
 
 /**
- * Crea los elementos de texto para un segmento (número y etiqueta)
- * @param {number} index - Índice del segmento
- * @param {number} value - Valor numérico del segmento
- * @param {string} label - Etiqueta opcional (nota musical)
- * @param {number} totalSegments - Total de segmentos
- * @returns {Array} Array con elementos de texto [numberText, labelText?]
+ * Creates SVG text elements for segment value and optional note label
+ * @param {number} index - Segment index
+ * @param {number} value - Pitch class integer
+ * @param {string} [label] - Optional natural note label (C, D, E, F, G, A, B)
+ * @param {number} totalSegments - Total slices in circle
+ * @returns {Array<SVGTextElement>} Array of text elements
  */
 function createSegmentTexts(index, value, label, totalSegments) {
     const anglePerSegment = (2 * Math.PI) / totalSegments;
@@ -54,72 +125,70 @@ function createSegmentTexts(index, value, label, totalSegments) {
     const x = centerX + baseRadius * Math.cos(angle);
     const y = centerY + baseRadius * Math.sin(angle);
     const rotation = (angle * 180 / Math.PI) + 90;
-    
+
+    const fontCfg = getFontConfigForTemperament(totalSegments);
     const texts = [];
-    
-    // Texto del número (arriba)
+
+    // Position pitch class number (centered if no note label, offset radially if label exists)
+    const numberY = label ? (y - fontCfg.numberOffsetWithLabel) : y;
     const numberText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    numberText.setAttribute('x', x);
-    numberText.setAttribute('y', y - 8);
+    numberText.setAttribute('x', String(x));
+    numberText.setAttribute('y', String(numberY));
     numberText.setAttribute('text-anchor', 'middle');
-    numberText.setAttribute('dominant-baseline', 'middle');
+    numberText.setAttribute('dominant-baseline', 'central');
     numberText.setAttribute('fill', 'white');
-    numberText.setAttribute('font-size', totalSegments > 40 ? '11' : '14');
+    numberText.setAttribute('font-size', fontCfg.numberSize);
     numberText.setAttribute('font-weight', 'bold');
     numberText.setAttribute('transform', `rotate(${rotation}, ${x}, ${y})`);
-    numberText.textContent = value;
+    numberText.textContent = String(value);
     numberText.classList.add('segment-text');
     numberText.style.pointerEvents = 'none';
     texts.push(numberText);
-    
-    // Etiqueta de nota (debajo, si existe)
+
+    // Natural note name (e.g. C, D, E...)
     if (label) {
         const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        labelText.setAttribute('x', x);
-        labelText.setAttribute('y', y + (totalSegments > 40 ? 10 : 14));
+        labelText.setAttribute('x', String(x));
+        labelText.setAttribute('y', String(y + fontCfg.labelOffset));
         labelText.setAttribute('text-anchor', 'middle');
-        labelText.setAttribute('dominant-baseline', 'middle');
+        labelText.setAttribute('dominant-baseline', 'central');
         labelText.setAttribute('fill', 'white');
-        labelText.setAttribute('font-size', totalSegments > 40 ? '12' : '16');
-        labelText.setAttribute('font-weight', totalSegments > 40 ? 'normal' : '700');
+        labelText.setAttribute('font-size', fontCfg.labelSize);
+        labelText.setAttribute('font-weight', totalSegments > 31 ? 'bold' : '800');
         labelText.setAttribute('transform', `rotate(${rotation}, ${x}, ${y})`);
         labelText.textContent = label;
         labelText.classList.add('segment-label');
         labelText.style.pointerEvents = 'none';
         texts.push(labelText);
     }
-    
+
     return texts;
 }
 
 /**
- * Valida que las dependencias estén disponibles
- * @returns {boolean} true si todas las dependencias están disponibles
+ * Validates availability of required libraries
+ * @returns {boolean}
  */
 function validateDependencies() {
     const missing = [];
-    
     if (typeof getSegmentsForTemperament === 'undefined') {
         missing.push('getSegmentsForTemperament (temperament-data.js)');
     }
-    
     if (typeof setTemperament === 'undefined') {
         missing.push('setTemperament (temperament-operations.js)');
     }
-    
     if (missing.length > 0) {
         console.error('ERROR: Faltan dependencias:', missing.join(', '));
         return false;
     }
-    
     return true;
 }
 
 /**
- * Inicializa un círculo SVG con segmentos
- * @param {string} svgId - ID del elemento SVG
- * @param {Array} elementsArray - Array para almacenar referencias a elementos
- * @param {boolean} selectable - Si los segmentos son clicables
+ * Initializes an SVG circle visualizer with segments and texts
+ * @param {string} svgId - DOM ID of target SVG element
+ * @param {Array<Object>} elementsArray - Array to store segment element references
+ * @param {boolean} selectable - Whether segments are interactive buttons
  */
 function initCircle(svgId, elementsArray, selectable) {
     const svg = document.getElementById(svgId);
@@ -127,78 +196,93 @@ function initCircle(svgId, elementsArray, selectable) {
         console.error(`No se encontró el SVG con id: ${svgId}`);
         return;
     }
-    
-    // Limpiar SVG
+
     svg.innerHTML = '';
-    
-    // Limpiar array de elementos
     elementsArray.length = 0;
-    
+
     const totalSegments = currentSegments.length;
-    
     if (totalSegments === 0) {
         console.error('No hay segmentos para renderizar');
         return;
     }
-    
-    console.log(`Renderizando ${totalSegments} segmentos en ${svgId}`);
-    
+
     currentSegments.forEach((segment, i) => {
-        // Crear path del segmento
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', createSegmentPath(i, totalSegments));
         path.setAttribute('fill', segment.color);
         path.setAttribute('stroke', 'white');
-        path.setAttribute('stroke-width', totalSegments > 40 ? '1.5' : '2');
+        path.setAttribute('stroke-width', totalSegments > 40 ? '1' : '1.5');
         path.classList.add('segment');
-        
+
+        const labelText = segment.label ? `Grado ${segment.value} (${segment.label})` : `Grado ${segment.value}`;
+
         if (selectable) {
             path.classList.add('selectable');
-            path.addEventListener('click', () => toggleSegment(segment, elementsArray));
+            path.setAttribute('role', 'button');
+            path.setAttribute('tabindex', '0');
+            path.setAttribute('aria-label', labelText);
+            path.setAttribute('aria-pressed', 'false');
+
+            path.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSegment(segment, elementsArray);
+            });
+
+            path.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleSegment(segment, elementsArray);
+                }
+            });
+        } else {
+            path.setAttribute('role', 'img');
+            path.setAttribute('aria-label', labelText);
         }
-        
+
         svg.appendChild(path);
-        
-        // Crear textos
+
         const texts = createSegmentTexts(i, segment.value, segment.label, totalSegments);
         texts.forEach(text => svg.appendChild(text));
-        
-        // Guardar referencias
+
         elementsArray.push({
-            path: path,
-            segment: segment,
-            texts: texts
+            path,
+            segment,
+            texts
         });
     });
 }
 
 /**
- * Alterna la selección de un segmento
- * @param {Object} segment - Segmento a alternar
- * @param {Array} elementsArray - Array de elementos
+ * Toggles pitch-class selection in the Fn selector circle
+ * @param {Object} segment - Segment model
+ * @param {Array<Object>} elementsArray - Segment elements references
  */
 function toggleSegment(segment, elementsArray) {
     const element = elementsArray.find(el => el.segment.value === segment.value);
     if (!element) return;
-    
+
     if (selectedSegments.has(segment.value)) {
         selectedSegments.delete(segment.value);
+        element.path.classList.remove('selected');
+        element.path.setAttribute('aria-pressed', 'false');
         element.texts.forEach(text => text.classList.remove('selected'));
     } else {
         selectedSegments.add(segment.value);
+        element.path.classList.add('selected');
+        element.path.setAttribute('aria-pressed', 'true');
         element.texts.forEach(text => text.classList.add('selected'));
     }
-    
+
     updateFnDisplay();
 }
 
 /**
- * Actualiza la visualización de valores seleccionados en Fn
+ * Updates the text display for the selected set
  */
 function updateFnDisplay() {
     const display = document.getElementById('fnValues');
     if (!display) return;
-    
+
     if (selectedSegments.size === 0) {
         display.textContent = '-';
     } else {
@@ -208,171 +292,291 @@ function updateFnDisplay() {
 }
 
 /**
- * Limpia todas las selecciones y resultados
+ * Clears all selections, highlights, and computed values
  */
 function clearSelection() {
     selectedSegments.clear();
-    
+
     [fnElements, tnElements, tniElements].forEach(group => {
         group.forEach(element => {
+            element.path.classList.remove('selected', 'highlighted-yellow', 'highlighted-red');
+            if (element.path.hasAttribute('aria-pressed')) {
+                element.path.setAttribute('aria-pressed', 'false');
+            }
             element.texts.forEach(text => {
                 text.classList.remove('selected', 'highlighted-yellow', 'highlighted-red');
             });
         });
     });
-    
-    document.getElementById('fnValues').textContent = '-';
-    document.getElementById('tnValues').textContent = '-';
-    document.getElementById('tniValues').textContent = '-';
+
+    const fnDisp = document.getElementById('fnValues');
+    const tnDisp = document.getElementById('tnValues');
+    const tniDisp = document.getElementById('tniValues');
+
+    if (fnDisp) fnDisp.textContent = '-';
+    if (tnDisp) tnDisp.textContent = '-';
+    if (tniDisp) tniDisp.textContent = '-';
+
+    const currentTemp = (typeof temperament !== 'undefined' && temperament) || 19;
+    renderIntervalVector([], currentTemp);
 }
 
 /**
- * Muestra el resultado de la transposición
- * @param {Array} resultArray - Array con valores transpuestos
+ * Displays transposition results on the Tn circle
+ * @param {Array<number>} resultArray - Transposed pitch classes
  */
 function displayTransposition(resultArray) {
-    // Limpiar highlights previos
     tnElements.forEach(element => {
+        element.path.classList.remove('highlighted-yellow');
         element.texts.forEach(text => text.classList.remove('highlighted-yellow'));
     });
-    
-    // Aplicar nuevos highlights
+
     resultArray.forEach(value => {
         const element = tnElements.find(el => el.segment.value === value);
         if (element) {
+            element.path.classList.add('highlighted-yellow');
             element.texts.forEach(text => text.classList.add('highlighted-yellow'));
         }
     });
-    
-    document.getElementById('tnValues').textContent = 
-        resultArray.length > 0 ? resultArray.join(', ') : '-';
+
+    const display = document.getElementById('tnValues');
+    if (display) {
+        display.textContent = resultArray.length > 0 ? resultArray.join(', ') : '-';
+    }
 }
 
 /**
- * Muestra el resultado de la inversión
- * @param {Array} resultArray - Array con valores invertidos
+ * Displays inversion results on the TnI circle
+ * @param {Array<number>} resultArray - Inverted pitch classes
  */
 function displayInversion(resultArray) {
-    // Limpiar highlights previos
     tniElements.forEach(element => {
+        element.path.classList.remove('highlighted-red');
         element.texts.forEach(text => text.classList.remove('highlighted-red'));
     });
-    
-    // Aplicar nuevos highlights
+
     resultArray.forEach(value => {
         const element = tniElements.find(el => el.segment.value === value);
         if (element) {
+            element.path.classList.add('highlighted-red');
             element.texts.forEach(text => text.classList.add('highlighted-red'));
         }
     });
-    
-    document.getElementById('tniValues').textContent = 
-        resultArray.length > 0 ? resultArray.join(', ') : '-';
+
+    const display = document.getElementById('tniValues');
+    if (display) {
+        display.textContent = resultArray.length > 0 ? resultArray.join(', ') : '-';
+    }
 }
 
 /**
- * Maneja el evento de submit (botón Bang)
+ * Handles the Bang button click / Enter submission: computes Normal Form, Tn, and TnI
  */
 function handleSubmit() {
     const values = Array.from(selectedSegments).sort((a, b) => a - b);
-    
+
     if (values.length === 0) {
-        alert('Por favor selecciona al menos un segmento');
+        showToast('Por favor selecciona al menos un segmento antes de presionar Bang', 'warning');
         return;
     }
-    
-    // Usar variables globales de temperament-operations.js
-    originalSet = values.slice();
-    normalForm = calculateNormalForm(originalSet, temperament);
-    
+
+    const currentTemp = (typeof temperament !== 'undefined' && temperament) || 19;
+    const calcNormal = (typeof calculateNormalForm === 'function')
+        ? calculateNormalForm
+        : (window.TemperamentOperations && window.TemperamentOperations.calculateNormalForm);
+    const transFn = (typeof transpose === 'function')
+        ? transpose
+        : (window.TemperamentOperations && window.TemperamentOperations.transpose);
+    const invFn = (typeof invert === 'function')
+        ? invert
+        : (window.TemperamentOperations && window.TemperamentOperations.invert);
+    const modFn = (typeof mod === 'function')
+        ? mod
+        : (window.TemperamentOperations && window.TemperamentOperations.mod);
+
+    const normForm = calcNormal(values, currentTemp);
+
+    if (typeof originalSet !== 'undefined') originalSet = values.slice();
+    if (typeof normalForm !== 'undefined') normalForm = normForm.slice();
+
     const transInput = document.getElementById('transpositionInput');
     const invInput = document.getElementById('inversionInput');
-    
-    currentTransposition = parseInt(transInput.value, 10) || 0;
-    currentInversion = parseInt(invInput.value, 10) || 0;
-    
-    const transposeValue = mod(currentTransposition, temperament);
-    const invertValue = mod(currentInversion, temperament);
-    
-    const transposed = transpose(normalForm, transposeValue, temperament);
-    const inverted = invert(normalForm, invertValue, temperament);
-    
+
+    const rawT = transInput ? parseInt(transInput.value, 10) : 0;
+    const rawI = invInput ? parseInt(invInput.value, 10) : 0;
+
+    const transposeValue = modFn(Number.isNaN(rawT) ? 0 : rawT, currentTemp);
+    const invertValue = modFn(Number.isNaN(rawI) ? 0 : rawI, currentTemp);
+
+    if (typeof currentTransposition !== 'undefined') currentTransposition = transposeValue;
+    if (typeof currentInversion !== 'undefined') currentInversion = invertValue;
+
+    const transposed = transFn(normForm, transposeValue, currentTemp);
+    const inverted = invFn(normForm, invertValue, currentTemp);
+
     displayTransposition(transposed);
     displayInversion(inverted);
+
+    const calcVec = (typeof calculateIntervalVector === 'function')
+        ? calculateIntervalVector
+        : (window.TemperamentOperations && window.TemperamentOperations.calculateIntervalVector);
+    if (calcVec) {
+        const vec = calcVec(normForm, currentTemp);
+        renderIntervalVector(vec, currentTemp);
+    }
 }
 
 /**
- * Cambia el temperamento activo y reinicializa los círculos
- * @param {number} newTemperament - Nuevo temperamento
+ * Renders the interval vector analysis grid and stats
+ * @param {Array<number>} vector - Counts of interval classes
+ * @param {number} temp - Current temperament
  */
-function changeTemperament(newTemperament) {
-    console.log(`Cambiando a temperamento: ${newTemperament}`);
-    
-    // Obtener segmentos para el nuevo temperamento
-    currentSegments = getSegmentsForTemperament(newTemperament);
-    console.log(`Segmentos cargados: ${currentSegments.length}`);
-    
-    if (currentSegments.length === 0) {
-        console.error(`No se encontraron segmentos para temperamento ${newTemperament}`);
+function renderIntervalVector(vector, temp) {
+    const grid = document.getElementById('vectorGrid');
+    const notation = document.getElementById('vectorNotation');
+    const badge = document.getElementById('totalIntervalsBadge');
+
+    if (!grid) return;
+
+    const totalIntervalClasses = Math.floor(temp / 2);
+    const centsPerStep = 1200 / temp;
+
+    if (!vector || vector.length === 0) {
+        if (notation) notation.textContent = 'Notación formal: ⟨ - ⟩';
+        if (badge) badge.textContent = 'Total intervalos: 0';
+        grid.innerHTML = '';
+        for (let k = 1; k <= totalIntervalClasses; k++) {
+            const cents = Math.round(k * centsPerStep);
+            const col = document.createElement('div');
+            col.className = 'vector-col empty';
+            col.innerHTML = `
+                <div class="vector-header">ic<sub>${k}</sub></div>
+                <div class="vector-cents">~${cents}¢</div>
+                <div class="vector-count">0</div>
+                <div class="vector-bar-wrap"><div class="vector-bar" style="height: 0%"></div></div>
+            `;
+            grid.appendChild(col);
+        }
         return;
     }
-    
-    // Actualizar temperamento en operations
+
+    const totalIntervals = vector.reduce((acc, val) => acc + val, 0);
+    const maxVal = Math.max(...vector, 1);
+
+    if (notation) notation.textContent = `Notación formal: ⟨ ${vector.join(', ')} ⟩`;
+    if (badge) badge.textContent = `Total intervalos: ${totalIntervals}`;
+
+    grid.innerHTML = '';
+    for (let k = 1; k <= totalIntervalClasses; k++) {
+        const count = vector[k - 1] || 0;
+        const cents = Math.round(k * centsPerStep);
+        const heightPct = count > 0 ? Math.min(100, Math.round((count / maxVal) * 100)) : 0;
+        const col = document.createElement('div');
+        col.className = `vector-col${count > 0 ? ' has-count' : ' empty'}`;
+        col.innerHTML = `
+            <div class="vector-header">ic<sub>${k}</sub></div>
+            <div class="vector-cents">~${cents}¢</div>
+            <div class="vector-count">${count}</div>
+            <div class="vector-bar-wrap"><div class="vector-bar" style="height: ${heightPct}%"></div></div>
+        `;
+        grid.appendChild(col);
+    }
+}
+
+/**
+ * Changes active temperament and reinitializes circles
+ * @param {number} newTemperament - Divisions per octave
+ */
+function changeTemperament(newTemperament) {
+    currentSegments = getSegmentsForTemperament(newTemperament);
+
+    if (currentSegments.length === 0) {
+        console.error(`No se encontraron segmentos para temperamento ${newTemperament}`);
+        showToast(`Error al cargar datos de ${newTemperament}-TET`, 'warning');
+        return;
+    }
+
     setTemperament(newTemperament);
-    
-    // Limpiar selecciones
     selectedSegments.clear();
-    
-    // Reinicializar círculos
+
     initCircle('fnSvg', fnElements, true);
     initCircle('tnSvg', tnElements, false);
     initCircle('tniSvg', tniElements, false);
-    
+
     clearSelection();
 }
 
 /**
- * Inicialización al cargar el DOM
+ * Initializes application on DOMContentLoaded
  */
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Iniciando Sistema de Círculos...');
-    
-    // Validar dependencias
+document.addEventListener('DOMContentLoaded', () => {
     if (!validateDependencies()) {
         console.error('No se puede inicializar: faltan dependencias');
         return;
     }
-    
-    // Configurar temperamento inicial
+
     const temperamentSelect = document.getElementById('temperamentSelect');
     if (!temperamentSelect) {
         console.error('ERROR: No se encontró el selector de temperamento');
         return;
     }
-    
+
     const initialTemperament = parseInt(temperamentSelect.value, 10);
-    console.log(`Temperamento inicial: ${initialTemperament}`);
-    
     changeTemperament(initialTemperament);
-    
-    // Event listeners
+
+    // Event Listeners
     temperamentSelect.addEventListener('change', function() {
         changeTemperament(parseInt(this.value, 10));
     });
-    
+
     const bangBtn = document.getElementById('bangBtn');
     if (bangBtn) {
         bangBtn.addEventListener('click', handleSubmit);
-    } else {
-        console.error('ERROR: No se encontró el botón Bang');
     }
-    
+
     const clearBtn = document.getElementById('clearBtn');
     if (clearBtn) {
-        clearBtn.addEventListener('click', clearSelection);
-    } else {
-        console.error('ERROR: No se encontró el botón Limpiar');
+        clearBtn.addEventListener('click', () => {
+            clearSelection();
+            showToast('Selección limpiada', 'info', 1500);
+        });
     }
-    
-    console.log('Sistema de Círculos inicializado correctamente');
+
+    // Input sanitization on manual typing/blur
+    const transInput = document.getElementById('transpositionInput');
+    const invInput = document.getElementById('inversionInput');
+
+    [transInput, invInput].forEach(input => {
+        if (!input) return;
+        input.addEventListener('change', function() {
+            const currentTemp = (typeof temperament !== 'undefined' && temperament) || 19;
+            const maxVal = currentTemp - 1;
+            let val = parseInt(this.value, 10);
+            if (Number.isNaN(val) || val < 0) {
+                this.value = '0';
+            } else if (val > maxVal) {
+                this.value = String(val % currentTemp);
+            }
+        });
+    });
+
+    // Global keyboard accessibility: Enter for Bang, Escape for Clear
+    document.addEventListener('keydown', (e) => {
+        const activeEl = document.activeElement;
+
+        if (e.key === 'Escape') {
+            clearSelection();
+            showToast('Selección limpiada', 'info', 1500);
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            // If focus is specifically on an SVG segment button or theme toggle, let that element's handler process it
+            if (activeEl && (activeEl.classList.contains('selectable') || activeEl.id === 'themeToggle' || activeEl.id === 'clearBtn')) {
+                return;
+            }
+            e.preventDefault();
+            handleSubmit();
+        }
+    });
 });

@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const themeToggleBtn = document.getElementById('themeToggle');
     const body = document.body;
+    if (!themeToggleBtn) return;
 
     // Check for saved preference
     const savedTheme = localStorage.getItem('theme');

@@ -91,15 +91,23 @@ Donde `T` es el número de divisiones del temperamento.
 - **Amarillo** (#FFD700): Resultado de transposición
 - **Rojo** (#FF4444): Resultado de inversión
 
+## Pruebas y Verificación
+
+El proyecto incluye una suite de pruebas unitarias automatizadas con cero dependencias externas, utilizando el test runner nativo de Node.js:
+
+```bash
+node --test
+```
+
 ## Roadmap
 
-### v1.1 (Planeado)
+### v1.1
+- [x] Modo oscuro/claro
+- [x] Análisis de vectores interválicos en tiempo real
 - [ ] Más temperamentos
 - [ ] Exportar/importar conjuntos en formato JSON
 - [ ] Historial de operaciones con deshacer/rehacer
 - [ ] Presets de acordes comunes
-- [ ] Modo oscuro/claro
-- [ ] Análisis de vectores interválicos
 - [ ] Comparación lado a lado de temperamentos
 - [ ] Calculadora de relaciones entre conjuntos
 - [ ] Exportación a notación musical
