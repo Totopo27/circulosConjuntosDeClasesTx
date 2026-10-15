@@ -1,9 +1,28 @@
 /**
  * temperament-data.js
- * Definitions, segments and configurations for Equal Temperaments (19-TET, 31-TET, 41-TET, 53-TET)
+ * Definitions, segments and configurations for Equal Temperaments (12, 19, 22, 24, 31, 41, 53-TET)
  */
 
 const RAW_TEMPERAMENT_CONFIGS = {
+    12: {
+        name: '12-TET',
+        description: 'Sistema estándar occidental de 12 divisiones por octava (100 cents por semitono)',
+        segments: [
+            { value: 0,  color: '#e0e0e0', label: 'C' },
+            { value: 1,  color: '#4a90e2' },
+            { value: 2,  color: '#e0e0e0', label: 'D' },
+            { value: 3,  color: '#4a90e2' },
+            { value: 4,  color: '#e0e0e0', label: 'E' },
+            { value: 5,  color: '#e0e0e0', label: 'F' },
+            { value: 6,  color: '#4a90e2' },
+            { value: 7,  color: '#e0e0e0', label: 'G' },
+            { value: 8,  color: '#4a90e2' },
+            { value: 9,  color: '#e0e0e0', label: 'A' },
+            { value: 10, color: '#4a90e2' },
+            { value: 11, color: '#e0e0e0', label: 'B' }
+        ]
+    },
+
     19: {
         name: '19-TET',
         description: 'Sistema de 19 divisiones por octava (~63.16 cents por grado)',
@@ -27,6 +46,66 @@ const RAW_TEMPERAMENT_CONFIGS = {
             { value: 16, color: '#4a90e2' },
             { value: 17, color: '#e0e0e0', label: 'B' },
             { value: 18, color: '#4a90e2' }
+        ]
+    },
+
+    22: {
+        name: '22-TET',
+        description: 'Sistema de 22 divisiones por octava (~54.55 cents, afinación de Shrutis / Porcupine)',
+        segments: [
+            { value: 0,  color: '#e0e0e0', label: 'C' },
+            { value: 1,  color: '#000000' },
+            { value: 2,  color: '#4a90e2' },
+            { value: 3,  color: '#000000' },
+            { value: 4,  color: '#e0e0e0', label: 'D' },
+            { value: 5,  color: '#000000' },
+            { value: 6,  color: '#4a90e2' },
+            { value: 7,  color: '#000000' },
+            { value: 8,  color: '#e0e0e0', label: 'E' },
+            { value: 9,  color: '#e0e0e0', label: 'F' },
+            { value: 10, color: '#000000' },
+            { value: 11, color: '#4a90e2' },
+            { value: 12, color: '#000000' },
+            { value: 13, color: '#e0e0e0', label: 'G' },
+            { value: 14, color: '#000000' },
+            { value: 15, color: '#4a90e2' },
+            { value: 16, color: '#000000' },
+            { value: 17, color: '#e0e0e0', label: 'A' },
+            { value: 18, color: '#000000' },
+            { value: 19, color: '#4a90e2' },
+            { value: 20, color: '#000000' },
+            { value: 21, color: '#e0e0e0', label: 'B' }
+        ]
+    },
+
+    24: {
+        name: '24-TET',
+        description: 'Sistema de 24 divisiones por octava (50 cents por cuarto de tono, música árabe y Hába)',
+        segments: [
+            { value: 0,  color: '#e0e0e0', label: 'C' },
+            { value: 1,  color: '#000000' },
+            { value: 2,  color: '#4a90e2' },
+            { value: 3,  color: '#000000' },
+            { value: 4,  color: '#e0e0e0', label: 'D' },
+            { value: 5,  color: '#000000' },
+            { value: 6,  color: '#4a90e2' },
+            { value: 7,  color: '#000000' },
+            { value: 8,  color: '#e0e0e0', label: 'E' },
+            { value: 9,  color: '#000000' },
+            { value: 10, color: '#e0e0e0', label: 'F' },
+            { value: 11, color: '#000000' },
+            { value: 12, color: '#4a90e2' },
+            { value: 13, color: '#000000' },
+            { value: 14, color: '#e0e0e0', label: 'G' },
+            { value: 15, color: '#000000' },
+            { value: 16, color: '#4a90e2' },
+            { value: 17, color: '#000000' },
+            { value: 18, color: '#e0e0e0', label: 'A' },
+            { value: 19, color: '#000000' },
+            { value: 20, color: '#4a90e2' },
+            { value: 21, color: '#000000' },
+            { value: 22, color: '#e0e0e0', label: 'B' },
+            { value: 23, color: '#000000' }
         ]
     },
 
@@ -177,18 +256,29 @@ const RAW_TEMPERAMENT_CONFIGS = {
     }
 };
 
-// Deeply freeze configuration objects to protect against runtime mutations
-Object.keys(RAW_TEMPERAMENT_CONFIGS).forEach(key => {
-    const config = RAW_TEMPERAMENT_CONFIGS[key];
-    config.segments.forEach(segment => Object.freeze(segment));
-    Object.freeze(config.segments);
-    Object.freeze(config);
-});
-const TEMPERAMENT_CONFIGS = Object.freeze(RAW_TEMPERAMENT_CONFIGS);
+/**
+ * Recursively freezes an object and its nested properties to protect against runtime mutations
+ * @param {Object} obj - The object to deeply freeze
+ * @returns {Object} The deeply frozen object
+ */
+function deepFreeze(obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+    Object.keys(obj).forEach(key => {
+        const val = obj[key];
+        if (typeof val === 'object' && val !== null && !Object.isFrozen(val)) {
+            deepFreeze(val);
+        }
+    });
+    return Object.freeze(obj);
+}
+
+const TEMPERAMENT_CONFIGS = deepFreeze(RAW_TEMPERAMENT_CONFIGS);
 
 /**
  * Validates if a temperament is officially supported
- * @param {number|string} temperament - Divisions to check (e.g. 19, 31, 41, 53)
+ * @param {number|string} temperament - Divisions to check (e.g. 12, 19, 22, 24, 31, 41, 53)
  * @returns {boolean} true if supported
  */
 function isTemperamentSupported(temperament) {
@@ -283,6 +373,7 @@ function getAvailableTemperaments() {
 // Module export structure
 const TemperamentData = {
     TEMPERAMENT_CONFIGS,
+    deepFreeze,
     getTemperamentConfig,
     getSegmentsForTemperament,
     getTemperamentName,
@@ -297,6 +388,7 @@ const TemperamentData = {
 if (typeof window !== 'undefined') {
     window.TEMPERAMENT_CONFIGS = TEMPERAMENT_CONFIGS;
     window.TemperamentData = TemperamentData;
+    window.deepFreeze = deepFreeze;
     window.getTemperamentConfig = getTemperamentConfig;
     window.getSegmentsForTemperament = getSegmentsForTemperament;
     window.getTemperamentName = getTemperamentName;

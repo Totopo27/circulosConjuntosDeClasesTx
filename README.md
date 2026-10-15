@@ -8,7 +8,7 @@ Herramienta educativa y de análisis musical que permite trabajar con operacione
 
 ## Características
 
-- **Múltiples temperamentos**: Soporte para 19-TET, 31-TET, 41-TET y 53-TET
+- **Múltiples temperamentos**: Soporte para 12-TET, 19-TET, 22-TET, 24-TET, 31-TET, 41-TET y 53-TET
 - **Operaciones de teoría de conjuntos**:
   - Cálculo automático de forma normal
   - Transposición (Tn)
@@ -35,7 +35,7 @@ Luego abre `index.html` en tu navegador web.
 
 ### Guía de uso
 
-1. **Seleccionar temperamento**: Usa el selector desplegable para elegir entre 19, 31, 41 o 53 divisiones por octava
+1. **Seleccionar temperamento**: Usa el selector desplegable para elegir entre 12, 19, 22, 24, 31, 41 o 53 divisiones por octava
 
 2. **Seleccionar notas**: Haz click en los segmentos del círculo **Fn** para construir tu conjunto de alturas
 
@@ -61,10 +61,25 @@ Donde `T` es el número de divisiones del temperamento.
 
 ### Los Temperamentos
 
+#### 12-TET
+- **Grado**: 100 cents (semitono temperado estándar)
+- **Aproxima**: Sistema estándar de la música occidental
+- **Uso**: Afinación universal para piano, guitarras e instrumentos contemporáneos
+
 #### 19-TET
 - **Grado**: ~63.16 cents
 - **Aproxima**: tercera mayor justa
 - **Uso histórico**: Guillaume Costeley (s. XVI)
+
+#### 22-TET
+- **Grado**: ~54.55 cents
+- **Aproxima**: Sistema de Shrutis de la música clásica india y temperamento Porcupine
+- **Precisión**: Excelente para consonancias de límite 5 y límite 7 (terceras y séptimas submenores)
+
+#### 24-TET
+- **Grado**: 50 cents (cuarto de tono)
+- **Aproxima**: Música tradicional de Medio Oriente (sistema Maqam) y microtonalismo de Alois Hába
+- **Características**: Duplica el sistema de 12-TET introduciendo subdivisiones exactas de cuarto de tono
 
 #### 31-TET
 - **Grado**: ~38.71 cents
@@ -104,7 +119,7 @@ node --test
 ### v1.1
 - [x] Modo oscuro/claro
 - [x] Análisis de vectores interválicos en tiempo real
-- [ ] Más temperamentos
+- [x] Catálogo ampliado de temperamentos (12-TET, 22-TET y 24-TET incorporados)
 - [ ] Exportar/importar conjuntos en formato JSON
 - [ ] Historial de operaciones con deshacer/rehacer
 - [ ] Presets de acordes comunes

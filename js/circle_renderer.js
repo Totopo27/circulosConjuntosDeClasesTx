@@ -51,16 +51,30 @@ function showToast(message, type = 'info', duration = 3000) {
 
 /**
  * Returns dynamic typography and positioning config scaled to segment density
- * @param {number} totalSegments - Total degrees in octave (19, 31, 41, 53)
+ * @param {number} totalSegments - Total degrees in octave (12, 19, 22, 24, 31, 41, 53)
  * @returns {{numberSize: string, labelSize: string, numberOffsetWithLabel: number, labelOffset: number}}
  */
 function getFontConfigForTemperament(totalSegments) {
-    if (totalSegments <= 19) {
+    if (totalSegments <= 12) {
+        return {
+            numberSize: '14',
+            labelSize: '15',
+            numberOffsetWithLabel: 7.5,
+            labelOffset: 13
+        };
+    } else if (totalSegments <= 19) {
         return {
             numberSize: '13',
             labelSize: '14',
             numberOffsetWithLabel: 7,
             labelOffset: 12
+        };
+    } else if (totalSegments <= 24) {
+        return {
+            numberSize: '12',
+            labelSize: '13',
+            numberOffsetWithLabel: 6.5,
+            labelOffset: 11
         };
     } else if (totalSegments <= 31) {
         return {
@@ -509,74 +523,87 @@ function changeTemperament(newTemperament) {
 /**
  * Initializes application on DOMContentLoaded
  */
-document.addEventListener('DOMContentLoaded', () => {
-    if (!validateDependencies()) {
-        console.error('No se puede inicializar: faltan dependencias');
-        return;
-    }
-
-    const temperamentSelect = document.getElementById('temperamentSelect');
-    if (!temperamentSelect) {
-        console.error('ERROR: No se encontró el selector de temperamento');
-        return;
-    }
-
-    const initialTemperament = parseInt(temperamentSelect.value, 10);
-    changeTemperament(initialTemperament);
-
-    // Event Listeners
-    temperamentSelect.addEventListener('change', function() {
-        changeTemperament(parseInt(this.value, 10));
-    });
-
-    const bangBtn = document.getElementById('bangBtn');
-    if (bangBtn) {
-        bangBtn.addEventListener('click', handleSubmit);
-    }
-
-    const clearBtn = document.getElementById('clearBtn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            clearSelection();
-            showToast('Selección limpiada', 'info', 1500);
-        });
-    }
-
-    // Input sanitization on manual typing/blur
-    const transInput = document.getElementById('transpositionInput');
-    const invInput = document.getElementById('inversionInput');
-
-    [transInput, invInput].forEach(input => {
-        if (!input) return;
-        input.addEventListener('change', function() {
-            const currentTemp = (typeof temperament !== 'undefined' && temperament) || 19;
-            const maxVal = currentTemp - 1;
-            let val = parseInt(this.value, 10);
-            if (Number.isNaN(val) || val < 0) {
-                this.value = '0';
-            } else if (val > maxVal) {
-                this.value = String(val % currentTemp);
-            }
-        });
-    });
-
-    // Global keyboard accessibility: Enter for Bang, Escape for Clear
-    document.addEventListener('keydown', (e) => {
-        const activeEl = document.activeElement;
-
-        if (e.key === 'Escape') {
-            clearSelection();
-            showToast('Selección limpiada', 'info', 1500);
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!validateDependencies()) {
+            console.error('No se puede inicializar: faltan dependencias');
             return;
         }
 
-        if (e.key === 'Enter') {
-            // If focus is specifically on an SVG segment button or theme toggle, let that element's handler process it
-            if (activeEl && (activeEl.classList.contains('selectable') || activeEl.id === 'themeToggle' || activeEl.id === 'clearBtn')) {
+        const temperamentSelect = document.getElementById('temperamentSelect');
+        if (!temperamentSelect) {
+            console.error('ERROR: No se encontró el selector de temperamento');
+            return;
+        }
+
+        const initialTemperament = parseInt(temperamentSelect.value, 10);
+        changeTemperament(initialTemperament);
+
+        // Event Listeners
+        temperamentSelect.addEventListener('change', function() {
+            changeTemperament(parseInt(this.value, 10));
+        });
+
+        const bangBtn = document.getElementById('bangBtn');
+        if (bangBtn) {
+            bangBtn.addEventListener('click', handleSubmit);
+        }
+
+        const clearBtn = document.getElementById('clearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                clearSelection();
+                showToast('Selección limpiada', 'info', 1500);
+            });
+        }
+
+        // Input sanitization on manual typing/blur
+        const transInput = document.getElementById('transpositionInput');
+        const invInput = document.getElementById('inversionInput');
+
+        [transInput, invInput].forEach(input => {
+            if (!input) return;
+            input.addEventListener('change', function() {
+                const currentTemp = (typeof temperament !== 'undefined' && temperament) || 19;
+                const maxVal = currentTemp - 1;
+                let val = parseInt(this.value, 10);
+                if (Number.isNaN(val) || val < 0) {
+                    this.value = '0';
+                } else if (val > maxVal) {
+                    this.value = String(val % currentTemp);
+                }
+            });
+        });
+
+        // Global keyboard accessibility: Enter for Bang, Escape for Clear
+        document.addEventListener('keydown', (e) => {
+            const activeEl = document.activeElement;
+
+            if (e.key === 'Escape') {
+                clearSelection();
+                showToast('Selección limpiada', 'info', 1500);
                 return;
             }
-            e.preventDefault();
-            handleSubmit();
-        }
+
+            if (e.key === 'Enter') {
+                // If focus is specifically on an SVG segment button or theme toggle, let that element's handler process it
+                if (activeEl && (activeEl.classList.contains('selectable') || activeEl.id === 'themeToggle' || activeEl.id === 'clearBtn')) {
+                    return;
+                }
+                e.preventDefault();
+                handleSubmit();
+            }
+        });
     });
-});
+}
+
+// Module export structure for testing and modular environments
+if (typeof window !== 'undefined') {
+    window.getFontConfigForTemperament = getFontConfigForTemperament;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        getFontConfigForTemperament
+    };
+}

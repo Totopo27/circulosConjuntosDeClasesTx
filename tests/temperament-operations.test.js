@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 
 const Operations = require('../js/temperament-operations.js');
 const Data = require('../js/temperament-data.js');
+const { getFontConfigForTemperament } = require('../js/circle_renderer.js');
 
 const {
     mod,
@@ -87,6 +88,12 @@ describe('3. John Rahn Normal Form (calculateNormalForm)', () => {
         assert.deepEqual(calculateNormalForm([26], 31), [26]);
     });
 
+    it('computes standard diatonic triad normal form in 12-TET', () => {
+        // Diatonic major triad C-E-G in 12-TET: C=0, E=4, G=7
+        assert.deepEqual(calculateNormalForm([7, 0, 4], 12), [0, 4, 7]);
+        assert.deepEqual(calculateNormalForm([4, 7, 0], 12), [0, 4, 7]);
+    });
+
     it('computes standard diatonic triad normal form in 19-TET', () => {
         // C=0, E=6, G=11 in 19-TET.
         // Rotations: [0,6,11] span 11; [6,11,0] span 13; [11,0,6] span 14.
@@ -106,6 +113,22 @@ describe('3. John Rahn Normal Form (calculateNormalForm)', () => {
         // At k=2, R4 has interval 6 < 7 of R2. R4 wins!
         const set19 = [0, 1, 7, 8, 14];
         assert.deepEqual(calculateNormalForm(set19, 19), [14, 0, 1, 7, 8]);
+    });
+
+    it('computes normal form correctly in 22-TET', () => {
+        // Diatonic major triad C-E-G in 22-TET: C=0, E=8, G=13
+        // [0, 8, 13] span 13.
+        // [8, 13, 0] span (0 - 8) mod 22 = 14.
+        // [13, 0, 8] span (8 - 13) mod 22 = 17.
+        assert.deepEqual(calculateNormalForm([13, 8, 0], 22), [0, 8, 13]);
+    });
+
+    it('computes normal form correctly in 24-TET', () => {
+        // Diatonic major triad C-E-G in 24-TET: C=0, E=8, G=14
+        // [0, 8, 14] span 14.
+        // [8, 14, 0] span (0 - 8) mod 24 = 16.
+        // [14, 0, 8] span (8 - 14) mod 24 = 18.
+        assert.deepEqual(calculateNormalForm([14, 0, 8], 24), [0, 8, 14]);
     });
 
     it('computes normal form correctly in 31-TET', () => {
@@ -151,7 +174,10 @@ describe('4. Transposition (transpose)', () => {
         assert.deepEqual(transpose([0, 6, 11], -2, 19), [4, 9, 17]);
     });
 
-    it('handles transpositions across 31, 41, 53-TET', () => {
+    it('handles transpositions across 12, 22, 24, 31, 41, 53-TET', () => {
+        assert.deepEqual(transpose([0, 4, 7], 2, 12), [2, 6, 9]);
+        assert.deepEqual(transpose([0, 8, 13], 5, 22), [5, 13, 18]);
+        assert.deepEqual(transpose([0, 8, 14], 6, 24), [6, 14, 20]);
         assert.deepEqual(transpose([0, 10, 18], 20, 31), [7, 20, 30]);
         assert.deepEqual(transpose([0, 14, 24], 30, 41), [3, 13, 30]);
         assert.deepEqual(transpose([0, 18, 31], 40, 53), [5, 18, 40]);
@@ -169,7 +195,16 @@ describe('5. Inversion (invert)', () => {
         assert.deepEqual(invert([0, 6, 11], 5, 19), [5, 13, 18]);
     });
 
-    it('handles inversions in 31, 41, 53-TET', () => {
+    it('handles inversions in 12, 22, 24, 31, 41, 53-TET', () => {
+        // 12-TET: I_0 of [0, 4, 7] -> (0-0)%12=0, (0-4)%12=8, (0-7)%12=5 => [0, 5, 8]
+        assert.deepEqual(invert([0, 4, 7], 0, 12), [0, 5, 8]);
+
+        // 22-TET: I_0 of [0, 8, 13] -> (0-0)%22=0, (0-8)%22=14, (0-13)%22=9 => [0, 9, 14]
+        assert.deepEqual(invert([0, 8, 13], 0, 22), [0, 9, 14]);
+
+        // 24-TET: I_0 of [0, 8, 14] -> (0-0)%24=0, (0-8)%24=16, (0-14)%24=10 => [0, 10, 16]
+        assert.deepEqual(invert([0, 8, 14], 0, 24), [0, 10, 16]);
+
         // 31-TET: I_0 of [0, 10, 18] -> (0-0)%31=0, (0-10)%31=21, (0-18)%31=13 => [0, 13, 21]
         assert.deepEqual(invert([0, 10, 18], 0, 31), [0, 13, 21]);
 
@@ -187,11 +222,31 @@ describe('6. Interval Vector (calculateIntervalVector)', () => {
         assert.deepEqual(calculateIntervalVector([5], 19), []);
     });
 
-    it('calculates exact interval vector length floor(temp / 2) for all 4 temperaments', () => {
+    it('calculates exact interval vector length floor(temp / 2) for all 7 temperaments', () => {
+        assert.equal(calculateIntervalVector([0, 1], 12).length, 6);
         assert.equal(calculateIntervalVector([0, 1], 19).length, 9);
+        assert.equal(calculateIntervalVector([0, 1], 22).length, 11);
+        assert.equal(calculateIntervalVector([0, 1], 24).length, 12);
         assert.equal(calculateIntervalVector([0, 1], 31).length, 15);
         assert.equal(calculateIntervalVector([0, 1], 41).length, 20);
         assert.equal(calculateIntervalVector([0, 1], 53).length, 26);
+    });
+
+    it('computes exact interval vector for C-major triad in 12-TET, 22-TET, and 24-TET', () => {
+        // 12-TET: [0, 4, 7] -> length 6: [0, 0, 1, 1, 1, 0]
+        const vec12 = calculateIntervalVector([0, 4, 7], 12);
+        assert.deepEqual(vec12, [0, 0, 1, 1, 1, 0]);
+        assert.equal(vec12.reduce((sum, n) => sum + n, 0), 3);
+
+        // 22-TET: [0, 8, 13] -> length 11: [0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0]
+        const vec22 = calculateIntervalVector([0, 8, 13], 22);
+        assert.deepEqual(vec22, [0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0]);
+        assert.equal(vec22.reduce((sum, n) => sum + n, 0), 3);
+
+        // 24-TET: [0, 8, 14] -> length 12: [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0]
+        const vec24 = calculateIntervalVector([0, 8, 14], 24);
+        assert.deepEqual(vec24, [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0]);
+        assert.equal(vec24.reduce((sum, n) => sum + n, 0), 3);
     });
 
     it('computes exact interval vector counts for a triad in 19-TET', () => {
@@ -214,15 +269,17 @@ describe('6. Interval Vector (calculateIntervalVector)', () => {
 });
 
 describe('7. Temperament Data Consistency (temperament-data.js)', () => {
-    it('protects TEMPERAMENT_CONFIGS from mutation via Object.freeze', () => {
+    it('protects TEMPERAMENT_CONFIGS from mutation via deepFreeze', () => {
         assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS));
-        assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[19]));
-        assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[19].segments));
-        assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[19].segments[0]));
+        [12, 19, 22, 24, 31, 41, 53].forEach(div => {
+            assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[div]), `${div}-TET config must be frozen`);
+            assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[div].segments), `${div}-TET segments array must be frozen`);
+            assert.ok(Object.isFrozen(TEMPERAMENT_CONFIGS[div].segments[0]), `${div}-TET segment item must be frozen`);
+        });
     });
 
-    it('supports all 4 documented equal temperaments (19, 31, 41, 53)', () => {
-        const expected = [19, 31, 41, 53];
+    it('supports all 7 documented equal temperaments (12, 19, 22, 24, 31, 41, 53)', () => {
+        const expected = [12, 19, 22, 24, 31, 41, 53];
         expected.forEach(div => {
             assert.ok(isTemperamentSupported(div), `${div}-TET must be supported`);
             const config = getTemperamentConfig(div);
@@ -233,7 +290,7 @@ describe('7. Temperament Data Consistency (temperament-data.js)', () => {
 
     it('ensures all segments have valid values, colors, and structure', () => {
         const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
-        [19, 31, 41, 53].forEach(div => {
+        [12, 19, 22, 24, 31, 41, 53].forEach(div => {
             const segments = getSegmentsForTemperament(div);
             assert.equal(segments.length, div);
             segments.forEach((seg, idx) => {
@@ -245,7 +302,10 @@ describe('7. Temperament Data Consistency (temperament-data.js)', () => {
 
     it('places natural diatonic notes (C, D, E, F, G, A, B) at canonical degree indices', () => {
         const canonicalNotes = {
+            12: { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 },
             19: { C: 0, D: 3, E: 6, F: 8, G: 11, A: 14, B: 17 },
+            22: { C: 0, D: 4, E: 8, F: 9, G: 13, A: 17, B: 21 },
+            24: { C: 0, D: 4, E: 8, F: 10, G: 14, A: 18, B: 22 },
             31: { C: 0, D: 5, E: 10, F: 13, G: 18, A: 23, B: 28 },
             41: { C: 0, D: 7, E: 14, F: 17, G: 24, A: 31, B: 38 },
             53: { C: 0, D: 9, E: 18, F: 22, G: 31, A: 40, B: 49 }
@@ -269,6 +329,27 @@ describe('7. Temperament Data Consistency (temperament-data.js)', () => {
         });
     });
 
+    it('correctly maps chromatic and microtonal colors in 12-TET, 22-TET, and 24-TET', () => {
+        // 12-TET
+        const segs12 = getSegmentsForTemperament(12);
+        const blue12 = segs12.filter(s => s.color === '#4a90e2').map(s => s.value);
+        assert.deepEqual(blue12, [1, 3, 6, 8, 10]);
+
+        // 22-TET
+        const segs22 = getSegmentsForTemperament(22);
+        const blue22 = segs22.filter(s => s.color === '#4a90e2').map(s => s.value);
+        const black22 = segs22.filter(s => s.color === '#000000').map(s => s.value);
+        assert.deepEqual(blue22, [2, 6, 11, 15, 19]);
+        assert.deepEqual(black22, [1, 3, 5, 7, 10, 12, 14, 16, 18, 20]);
+
+        // 24-TET
+        const segs24 = getSegmentsForTemperament(24);
+        const blue24 = segs24.filter(s => s.color === '#4a90e2').map(s => s.value);
+        const black24 = segs24.filter(s => s.color === '#000000').map(s => s.value);
+        assert.deepEqual(blue24, [2, 6, 12, 16, 20]);
+        assert.deepEqual(black24, [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]);
+    });
+
     it('validates pitch class helper functions', () => {
         assert.equal(isValidPitchClass(0, 19), true);
         assert.equal(isValidPitchClass(18, 19), true);
@@ -279,5 +360,37 @@ describe('7. Temperament Data Consistency (temperament-data.js)', () => {
 
         assert.equal(validatePitchClass(10, 19), 10);
         assert.throws(() => validatePitchClass(25, 19), RangeError);
+    });
+});
+
+describe('8. Typography Dynamic Scaling (circle_renderer.js)', () => {
+    it('scales typography appropriately across all supported temperaments', () => {
+        const cfg12 = getFontConfigForTemperament(12);
+        assert.equal(cfg12.numberSize, '14');
+        assert.equal(cfg12.labelSize, '15');
+
+        const cfg19 = getFontConfigForTemperament(19);
+        assert.equal(cfg19.numberSize, '13');
+        assert.equal(cfg19.labelSize, '14');
+
+        const cfg22 = getFontConfigForTemperament(22);
+        assert.equal(cfg22.numberSize, '12');
+        assert.equal(cfg22.labelSize, '13');
+
+        const cfg24 = getFontConfigForTemperament(24);
+        assert.equal(cfg24.numberSize, '12');
+        assert.equal(cfg24.labelSize, '13');
+
+        const cfg31 = getFontConfigForTemperament(31);
+        assert.equal(cfg31.numberSize, '11');
+        assert.equal(cfg31.labelSize, '12');
+
+        const cfg41 = getFontConfigForTemperament(41);
+        assert.equal(cfg41.numberSize, '9.5');
+        assert.equal(cfg41.labelSize, '10');
+
+        const cfg53 = getFontConfigForTemperament(53);
+        assert.equal(cfg53.numberSize, '8.5');
+        assert.equal(cfg53.labelSize, '9');
     });
 });

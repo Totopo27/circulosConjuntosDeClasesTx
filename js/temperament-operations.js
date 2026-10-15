@@ -1,6 +1,6 @@
 /**
  * temperament-operations.js
- * Mathematical operations for Pitch Class Set Theory across Equal Temperaments (19, 31, 41, 53-TET)
+ * Mathematical operations for Pitch Class Set Theory across Equal Temperaments (12, 19, 22, 24, 31, 41, 53-TET)
  */
 
 // Application state with controlled mutation
@@ -203,7 +203,7 @@ function calculateIntervalVector(set, temp) {
 
 /**
  * Updates the active temperament and harmonizes inputs limits in the DOM
- * @param {number} newTemperament - New temperament value (19, 31, 41, 53)
+ * @param {number} newTemperament - New temperament value (12, 19, 22, 24, 31, 41, 53)
  * @returns {number} Updated active temperament
  */
 function setTemperament(newTemperament) {
